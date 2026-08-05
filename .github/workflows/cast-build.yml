@@ -1,0 +1,16 @@
+name: CAST Build
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+
+jobs:
+  cast-build:
+    uses: manchester-fme/CAST/.github/workflows/build.yml@feature/parametric-coverage-fuzzer
+    with:
+      solver: cvc5
+      repo_url: ${{ github.server_url }}/${{ github.repository }}
+      force_run: true
+    secrets: inherit
