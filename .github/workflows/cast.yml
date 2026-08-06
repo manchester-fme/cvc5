@@ -13,9 +13,15 @@ on:
           - daily-check
           - fuzz
       commit_hash:
-        description: 'Required for fuzz; bypasses queue/schedule lookup for manager and build'
+        description: 'Required for fuzz; bypasses queue/schedule lookup for manager and build; ignored on a scheduled run'
         required: false
         type: string
+  schedule:
+    - cron: '*/15 * * * *'
+    - cron: '5,35 * * * *'
+    - cron: '0 0 * * *'
+    - cron: '0 0 1 * *'
+    - cron: '45 0,6,12,18 * * *'
 
 permissions:
   actions: read
@@ -24,7 +30,7 @@ permissions:
 
 jobs:
   manager:
-    if: inputs.action == 'manager'
+    if: inputs.action == 'manager' || github.event.schedule == '*/15 * * * *'
     uses: manchester-fme/CAST/.github/workflows/manager.yml@feature/parametric-coverage-fuzzer
     with:
       repo_url: ${{ github.server_url }}/${{ github.repository }}
@@ -32,7 +38,7 @@ jobs:
     secrets: inherit
 
   build:
-    if: inputs.action == 'build'
+    if: inputs.action == 'build' || github.event.schedule == '5,35 * * * *'
     uses: manchester-fme/CAST/.github/workflows/build.yml@feature/parametric-coverage-fuzzer
     with:
       repo_url: ${{ github.server_url }}/${{ github.repository }}
@@ -42,7 +48,7 @@ jobs:
     secrets: inherit
 
   coverage:
-    if: inputs.action == 'coverage'
+    if: inputs.action == 'coverage' || github.event.schedule == '0 0 1 * *'
     uses: manchester-fme/CAST/.github/workflows/coverage-mapper.yml@feature/parametric-coverage-fuzzer
     with:
       repo_url: ${{ github.server_url }}/${{ github.repository }}
@@ -50,7 +56,7 @@ jobs:
     secrets: inherit
 
   daily-check:
-    if: inputs.action == 'daily-check'
+    if: inputs.action == 'daily-check' || github.event.schedule == '0 0 * * *'
     uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@feature/parametric-coverage-fuzzer
     with:
       repo_url: ${{ github.server_url }}/${{ github.repository }}
@@ -58,7 +64,7 @@ jobs:
     secrets: inherit
 
   fuzz:
-    if: inputs.action == 'fuzz'
+    if: inputs.action == 'fuzz' || github.event.schedule == '45 0,6,12,18 * * *'
     uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@feature/parametric-coverage-fuzzer
     with:
       repo_url: ${{ github.server_url }}/${{ github.repository }}
