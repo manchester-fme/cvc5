@@ -1,14 +1,9 @@
 name: CAST
 
-# Single entry point for every CAST reusable workflow this fork exercises -
-# pick one via the action dropdown instead of five separate workflow files.
-# See manchester-fme/CAST's own workflow files for what each one does.
-
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Which CAST workflow to run'
         required: true
         type: choice
         options:
@@ -18,16 +13,10 @@ on:
           - daily-check
           - fuzz
       commit_hash:
-        description: 'Commit hash - required for fuzz (no fuzzing-schedule state yet to auto-select one in this namespace); optional for manager (skips the scheduled scan and enqueues this commit directly) and build (bypasses the build-queue lookup entirely, e.g. if it has a stale entry from before this fork''s .cast/ existed - force_run only kicks in when the queue is empty)'
+        description: 'Required for fuzz; bypasses queue/schedule lookup for manager and build'
         required: false
         type: string
 
-# The caller's permissions block is a ceiling for every nested job across
-# all five reusable workflows, not just the ones this specific action uses -
-# commit-fuzzer.yml's commit-fuzzer/fuzzer-jobs/collect-bugs jobs need
-# actions: read + contents: read on top of id-token: write, so all three
-# have to be granted here even though build/coverage/manager only use the
-# id-token one.
 permissions:
   actions: read
   contents: read
@@ -38,7 +27,6 @@ jobs:
     if: inputs.action == 'manager'
     uses: manchester-fme/CAST/.github/workflows/manager.yml@feature/parametric-coverage-fuzzer
     with:
-      solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
       commit_hash: ${{ inputs.commit_hash }}
     secrets: inherit
@@ -47,7 +35,6 @@ jobs:
     if: inputs.action == 'build'
     uses: manchester-fme/CAST/.github/workflows/build.yml@feature/parametric-coverage-fuzzer
     with:
-      solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
       build_script: cvc5/.cast/build.sh
       commit_hash: ${{ inputs.commit_hash }}
@@ -58,7 +45,6 @@ jobs:
     if: inputs.action == 'coverage'
     uses: manchester-fme/CAST/.github/workflows/coverage-mapper.yml@feature/parametric-coverage-fuzzer
     with:
-      solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
       solver_dir: cvc5/.cast
     secrets: inherit
@@ -67,7 +53,6 @@ jobs:
     if: inputs.action == 'daily-check'
     uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@feature/parametric-coverage-fuzzer
     with:
-      solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
       solver_dir: cvc5/.cast
     secrets: inherit
@@ -76,7 +61,6 @@ jobs:
     if: inputs.action == 'fuzz'
     uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@feature/parametric-coverage-fuzzer
     with:
-      solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
       solver_dir: cvc5/.cast
       commit_hash: ${{ inputs.commit_hash }}
