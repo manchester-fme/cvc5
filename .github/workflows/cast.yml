@@ -18,7 +18,7 @@ on:
           - daily-check
           - fuzz
       commit_hash:
-        description: 'Commit hash - required for fuzz (no fuzzing-schedule state yet to auto-select one in this namespace); optional for manager (skips the scheduled scan and enqueues this commit directly)'
+        description: 'Commit hash - required for fuzz (no fuzzing-schedule state yet to auto-select one in this namespace); optional for manager (skips the scheduled scan and enqueues this commit directly) and build (bypasses the build-queue lookup entirely, e.g. if it has a stale entry from before this fork''s .cast/ existed - force_run only kicks in when the queue is empty)'
         required: false
         type: string
 
@@ -50,6 +50,7 @@ jobs:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
       build_script: cvc5/.cast/build.sh
+      commit_hash: ${{ inputs.commit_hash }}
       force_run: true
     secrets: inherit
 
