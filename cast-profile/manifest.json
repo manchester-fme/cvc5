@@ -1,0 +1,27 @@
+{
+  "coverage": {
+    "repo_url": "https://github.com/cvc5/cvc5.git",
+    "extra_repos": [],
+    "pre_discovery_setup": "./configure.sh production --auto-download",
+    "discovery_flag": "--build-dir",
+    "discovery_target": "{solver}/build",
+    "oracle_solver": null,
+    "oracle_fetch": null
+  },
+  "fuzzer": {
+    "repo_url": "https://github.com/cvc5/cvc5.git",
+    "extra_repos": [],
+    "extra_pip_packages": [],
+    "tests_root": "test/regress/cli",
+    "target_flag": "--cvc5-path",
+    "target_binary_path": "./build/bin/cvc5",
+    "oracle_solver": "z3",
+    "oracle_flag": null,
+    "oracle_fetch_fallback": {
+      "type": "pip",
+      "package": "z3-solver"
+    },
+    "skip_sut_clone_if_binary_cached": false,
+    "git_cleanup_dirs": ["cvc5", "yinyang"]
+  }
+}
