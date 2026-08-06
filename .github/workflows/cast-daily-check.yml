@@ -1,0 +1,16 @@
+name: CAST Coverage Daily Check
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+
+jobs:
+  cast-daily-check:
+    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@feature/parametric-coverage-fuzzer
+    with:
+      solver: cvc5
+      repo_url: ${{ github.server_url }}/${{ github.repository }}
+      solver_dir: cvc5/cast-profile
+    secrets: inherit
