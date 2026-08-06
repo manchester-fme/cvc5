@@ -1,0 +1,21 @@
+name: CAST Manager
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_hash:
+        description: 'Optional: commit hash to add to build queue (skips the scheduled scan)'
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+
+jobs:
+  cast-manager:
+    uses: manchester-fme/CAST/.github/workflows/manager.yml@feature/parametric-coverage-fuzzer
+    with:
+      solver: cvc5
+      repo_url: ${{ github.server_url }}/${{ github.repository }}
+      commit_hash: ${{ inputs.commit_hash }}
+    secrets: inherit
