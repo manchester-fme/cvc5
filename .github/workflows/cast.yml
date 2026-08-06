@@ -22,7 +22,15 @@ on:
         required: false
         type: string
 
+# The caller's permissions block is a ceiling for every nested job across
+# all five reusable workflows, not just the ones this specific action uses -
+# commit-fuzzer.yml's commit-fuzzer/fuzzer-jobs/collect-bugs jobs need
+# actions: read + contents: read on top of id-token: write, so all three
+# have to be granted here even though build/coverage/manager only use the
+# id-token one.
 permissions:
+  actions: read
+  contents: read
   id-token: write
 
 jobs:
