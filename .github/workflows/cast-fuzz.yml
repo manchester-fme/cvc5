@@ -17,6 +17,6 @@ jobs:
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
-      solver_dir: cvc5/cast-profile
+      solver_dir: cvc5/.cast
       commit_hash: ${{ inputs.commit_hash }}
     secrets: inherit

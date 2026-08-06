@@ -12,7 +12,7 @@ jobs:
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
-      build_script: cvc5/cast-profile/build.sh
-      solver_dir: cvc5/cast-profile
+      build_script: cvc5/.cast/build.sh
+      solver_dir: cvc5/.cast
       force_run: true
     secrets: inherit
