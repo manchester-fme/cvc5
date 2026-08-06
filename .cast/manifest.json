@@ -16,12 +16,46 @@
     "target_flag": "--cvc5-path",
     "target_binary_path": "./build/bin/cvc5",
     "oracle_solver": "z3",
-    "oracle_flag": null,
+    "oracle_flag": "--z3-path",
     "oracle_fetch_fallback": {
       "type": "pip",
       "package": "z3-solver"
     },
     "skip_sut_clone_if_binary_cached": false,
-    "git_cleanup_dirs": ["cvc5", "yinyang"]
+    "git_cleanup_dirs": ["cvc5", "yinyang"],
+    "namespace_prefix": "cvc5::",
+    "clang_args": [
+      "-x", "c++",
+      "-std=c++17",
+      "-gz=none",
+      "-I./include",
+      "-I./build/include",
+      "-I./src/include",
+      "-I./src/.",
+      "-I./build/src",
+      "-isystem", "./build/deps/include",
+      "-DCVC5_ASSERTIONS",
+      "-DCVC5_DEBUG",
+      "-DCVC5_STATISTICS_ON",
+      "-DCVC5_TRACING",
+      "-DCVC5_USE_POLY",
+      "-D__BUILDING_CVC5LIB",
+      "-Dcvc5_obj_EXPORTS",
+      "-Wall",
+      "-Wsuggest-override",
+      "-Wnon-virtual-dtor",
+      "-Wimplicit-fallthrough",
+      "-Wshadow",
+      "-fno-operator-names",
+      "-Wno-deprecated-declarations",
+      "-Wno-error=deprecated-declarations",
+      "-fPIC",
+      "-fvisibility=default",
+      "-fparse-all-comments",
+      "-Wno-unknown-pragmas",
+      "-Wno-unused-parameter",
+      "-Wno-unused-variable",
+      "-Wno-unused-function"
+    ]
   }
 }
