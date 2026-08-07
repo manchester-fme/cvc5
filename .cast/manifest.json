@@ -2,7 +2,7 @@
   "coverage": {
     "repo_url": "https://github.com/cvc5/cvc5.git",
     "extra_repos": [],
-    "pre_discovery_setup": "./configure.sh production --auto-download",
+    "setup_command": "./configure.sh production --auto-download",
     "list_tests_command": "cd cvc5/build && ctest --show-only | sed -nE 's/^[[:space:]]*Test[[:space:]]+#[0-9]+:[[:space:]]*(.+)$/\\1/p'",
     "run_test_command": "cd cvc5/build && ctest -R '^{test}$' -j4 --output-on-failure",
     "target_jobs": 6,
@@ -15,13 +15,22 @@
     "extra_repos": [],
     "extra_pip_packages": [],
     "tests_root": "test/regress/cli",
-    "target_flag": "--cvc5-path",
     "target_binary_path": "./build/bin/cvc5",
     "oracle_solver": "z3",
-    "oracle_flag": "--z3-path",
     "oracle_fetch_fallback": {
       "type": "pip",
       "package": "z3-solver"
+    },
+    "resources": {
+      "max_workers": null,
+      "cpu_warning": 85.0,
+      "cpu_critical": 95.0,
+      "memory_warning_available_gb": 2.0,
+      "memory_critical_available_gb": 0.5,
+      "check_interval": 2,
+      "pause_duration": 10,
+      "max_process_memory_mb": 2048,
+      "max_process_memory_mb_warning": 1536
     },
     "skip_sut_clone_if_binary_cached": false,
     "git_cleanup_dirs": ["cvc5", "yinyang"],
