@@ -3,8 +3,10 @@
     "repo_url": "https://github.com/cvc5/cvc5.git",
     "extra_repos": [],
     "pre_discovery_setup": "./configure.sh production --auto-download",
-    "discovery_flag": "--build-dir",
-    "discovery_target": "{solver}/build",
+    "list_tests_command": "cd cvc5/build && ctest --show-only | sed -nE 's/^[[:space:]]*Test[[:space:]]+#[0-9]+:[[:space:]]*(.+)$/\\1/p'",
+    "run_test_command": "cd cvc5/build && ctest -R '^{test}$' -j4 --output-on-failure",
+    "target_jobs": 6,
+    "avg_test_time_seconds": 18.6,
     "oracle_solver": null,
     "oracle_fetch": null
   },
