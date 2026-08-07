@@ -15,6 +15,7 @@
     "extra_repos": [],
     "extra_pip_packages": [],
     "tests_root": "test/regress/cli",
+    "list_tests_command": "find test/regress/cli -type f \\( -name '*.smt2' -o -name '*.smt' \\) | sed 's#^test/regress/cli/##' | sort",
     "target_binary_path": "./build/bin/cvc5",
     "oracle_solver": "z3",
     "oracle_fetch_fallback": {
@@ -23,6 +24,7 @@
     },
     "resources": {
       "max_workers": null,
+      "max_jobs": 9,
       "cpu_warning": 85.0,
       "cpu_critical": 95.0,
       "memory_warning_available_gb": 2.0,
