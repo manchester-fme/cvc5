@@ -31,7 +31,7 @@ permissions:
 jobs:
   manager:
     if: inputs.action == 'manager' || github.event.schedule == '*/15 * * * *'
-    uses: manchester-fme/CAST/.github/workflows/manager.yml@feature/parametric-coverage-fuzzer
+    uses: manchester-fme/CAST/.github/workflows/manager.yml@main
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
@@ -40,7 +40,7 @@ jobs:
 
   build:
     if: inputs.action == 'build' || github.event.schedule == '5,35 * * * *'
-    uses: manchester-fme/CAST/.github/workflows/build.yml@feature/parametric-coverage-fuzzer
+    uses: manchester-fme/CAST/.github/workflows/build.yml@main
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
@@ -52,7 +52,7 @@ jobs:
 
   coverage:
     if: inputs.action == 'coverage' || github.event.schedule == '0 0 1 * *'
-    uses: manchester-fme/CAST/.github/workflows/coverage-mapper.yml@feature/parametric-coverage-fuzzer
+    uses: manchester-fme/CAST/.github/workflows/coverage-mapper.yml@main
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
@@ -61,7 +61,7 @@ jobs:
 
   daily-check:
     if: inputs.action == 'daily-check' || github.event.schedule == '0 0 * * *'
-    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@feature/parametric-coverage-fuzzer
+    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@main
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
@@ -70,7 +70,7 @@ jobs:
 
   fuzz:
     if: inputs.action == 'fuzz' || github.event.schedule == '45 0,6,12,18 * * *'
-    uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@feature/parametric-coverage-fuzzer
+    uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@main
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
