@@ -1,5 +1,14 @@
 name: CAST
 
+run-name: >-
+  CAST: ${{ inputs.action
+  || (github.event.schedule == '*/15 * * * *' && 'manager')
+  || (github.event.schedule == '5,35 * * * *' && 'build')
+  || (github.event.schedule == '0 0 1 * *' && 'coverage')
+  || (github.event.schedule == '0 0 * * *' && 'daily-check')
+  || (github.event.schedule == '45 0,6,12,18 * * *' && 'fuzz')
+  || github.event_name }}
+
 on:
   workflow_dispatch:
     inputs:
