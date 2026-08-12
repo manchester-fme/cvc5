@@ -38,12 +38,32 @@ permissions:
   id-token: write
 
 jobs:
+  # Manager tracks/queues commits from the real upstream repo (not this
+  # fork's own history) so build-queue/fuzzing-schedule state, and every
+  # downstream diff analysis, deal in genuine upstream commit hashes -
+  # this fork exists only to host the .cast/ profile and this trigger,
+  # never as the thing whose commits get tracked. Read from
+  # .cast/manifest.json instead of hardcoding, so it can't drift from the
+  # URL the rest of the profile (coverage/fuzzer sections) already uses.
+  resolve-upstream:
+    if: inputs.action == 'manager' || github.event.schedule == '*/15 * * * *'
+    runs-on: ubuntu-latest
+    outputs:
+      upstream_repo_url: ${{ steps.read.outputs.upstream_repo_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Read upstream repo_url from .cast/manifest.json
+        id: read
+        run: echo "upstream_repo_url=$(jq -r '.coverage.repo_url' .cast/manifest.json)" >> "$GITHUB_OUTPUT"
+
   manager:
     if: inputs.action == 'manager' || github.event.schedule == '*/15 * * * *'
+    needs: resolve-upstream
     uses: manchester-fme/CAST/.github/workflows/manager.yml@main
     with:
       solver: cvc5
-      repo_url: ${{ github.server_url }}/${{ github.repository }}
+      repo_url: ${{ needs.resolve-upstream.outputs.upstream_repo_url }}
       commit_hash: ${{ inputs.commit_hash }}
     secrets: inherit
 
