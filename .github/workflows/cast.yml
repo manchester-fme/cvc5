@@ -1,13 +1,22 @@
 name: CAST
 
 run-name: >-
-  CAST: ${{ inputs.action
-  || (github.event.schedule == '*/15 * * * *' && 'manager')
-  || (github.event.schedule == '5,35 * * * *' && 'build')
-  || (github.event.schedule == '0 0 1 * *' && 'coverage')
-  || (github.event.schedule == '0 0 * * *' && 'daily-check')
-  || (github.event.schedule == '45 0,6,12,18 * * *' && 'fuzz')
-  || github.event_name }}
+  CAST: ${{ inputs.action || 'cycle' }}
+
+# Every 6h: build the latest commit, fuzz it (~5h), then triage whatever
+# bugs that run found (~1h) -- one sequential run per tick rather than
+# separate manager/build/fuzz/coverage/daily-check schedules, to stay well
+# under the org's Actions concurrency limits. `needs:` chains the three
+# jobs so they run in order within a single workflow run instead of
+# overlapping, and `concurrency:` below queues a tick rather than starting
+# a second cycle if the previous one is still running long.
+#
+# There's no separate commit-polling step (manager.yml) any more --
+# build.yml's force_run:true already resolves+builds the current upstream
+# HEAD directly when its queue is empty, which it always is without
+# manager.yml feeding it. Coverage-guided fuzzing (coverage.yml/
+# daily-check.yml) is dropped too, so fuzz below runs no_coverage: the
+# whole test suite each cycle rather than a commit-diff-selected subset.
 
 on:
   workflow_dispatch:
@@ -16,59 +25,31 @@ on:
         required: true
         type: choice
         options:
-          - manager
+          - cycle
           - build
-          - coverage
-          - daily-check
           - fuzz
+          - triage
       commit_hash:
-        description: 'Required for fuzz; bypasses queue/schedule lookup for manager and build; ignored on a scheduled run'
+        description: 'Optional: commit hash (build/cycle only; ignored on a scheduled run)'
         required: false
         type: string
   schedule:
-    - cron: '*/15 * * * *'
-    - cron: '5,35 * * * *'
-    - cron: '0 0 * * *'
-    - cron: '0 0 1 * *'
-    - cron: '45 0,6,12,18 * * *'
+    - cron: '0 0,6,12,18 * * *'  # cycle: build -> fuzz (~5h) -> triage (~1h)
 
 permissions:
   actions: read
   contents: read
+  issues: write
   id-token: write
 
+concurrency:
+  group: cast-cycle-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
-  # Manager tracks/queues commits from the real upstream repo (not this
-  # fork's own history) so build-queue/fuzzing-schedule state, and every
-  # downstream diff analysis, deal in genuine upstream commit hashes -
-  # this fork exists only to host the .cast/ profile and this trigger,
-  # never as the thing whose commits get tracked. Read from
-  # .cast/manifest.json instead of hardcoding, so it can't drift from the
-  # URL the rest of the profile (coverage/fuzzer sections) already uses.
-  resolve-upstream:
-    if: inputs.action == 'manager' || github.event.schedule == '*/15 * * * *'
-    runs-on: ubuntu-latest
-    outputs:
-      upstream_repo_url: ${{ steps.read.outputs.upstream_repo_url }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Read upstream repo_url from .cast/manifest.json
-        id: read
-        run: echo "upstream_repo_url=$(jq -r '.coverage.repo_url' .cast/manifest.json)" >> "$GITHUB_OUTPUT"
-
-  manager:
-    if: inputs.action == 'manager' || github.event.schedule == '*/15 * * * *'
-    needs: resolve-upstream
-    uses: manchester-fme/CAST/.github/workflows/manager.yml@main
-    with:
-      solver: cvc5
-      repo_url: ${{ needs.resolve-upstream.outputs.upstream_repo_url }}
-      commit_hash: ${{ inputs.commit_hash }}
-    secrets: inherit
-
   build:
-    if: inputs.action == 'build' || github.event.schedule == '5,35 * * * *'
+    name: CAST Build
+    if: inputs.action == 'cycle' || inputs.action == 'build' || github.event_name == 'schedule'
     uses: manchester-fme/CAST/.github/workflows/build.yml@main
     with:
       solver: cvc5
@@ -79,30 +60,28 @@ jobs:
       force_run: true
     secrets: inherit
 
-  coverage:
-    if: inputs.action == 'coverage' || github.event.schedule == '0 0 1 * *'
-    uses: manchester-fme/CAST/.github/workflows/coverage-mapper.yml@main
-    with:
-      solver: cvc5
-      repo_url: ${{ github.server_url }}/${{ github.repository }}
-      solver_dir: cvc5/.cast
-    secrets: inherit
-
-  daily-check:
-    if: inputs.action == 'daily-check' || github.event.schedule == '0 0 * * *'
-    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@main
-    with:
-      solver: cvc5
-      repo_url: ${{ github.server_url }}/${{ github.repository }}
-      solver_dir: cvc5/.cast
-    secrets: inherit
-
   fuzz:
-    if: inputs.action == 'fuzz' || github.event.schedule == '45 0,6,12,18 * * *'
+    name: CAST Fuzz
+    needs: build
+    if: inputs.action == 'cycle' || inputs.action == 'fuzz' || github.event_name == 'schedule'
     uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@main
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}
       solver_dir: cvc5/.cast
-      commit_hash: ${{ inputs.commit_hash }}
+      no_coverage: true
+      stop_buffer_minutes: 60  # GitHub's default 360-min job timeout minus this = ~5h fuzz budget
+    secrets: inherit
+
+  triage:
+    name: CAST Triage
+    needs: fuzz
+    if: inputs.action == 'cycle' || inputs.action == 'triage' || github.event_name == 'schedule'
+    uses: manchester-fme/CAST/.github/workflows/triage.yml@main
+    with:
+      solver: cvc5
+      target_cmd: "cvc5 --check-models --check-proofs"
+      oracle_cmd: "z3 model_validate=true"
+      # archive/commit_hash left empty: auto-discovers this cycle's build/bugs
+      post: true
     secrets: inherit
