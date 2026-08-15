@@ -2,25 +2,38 @@ name: CAST
 
 run-name: >-
   CAST: ${{ inputs.action
+  || (github.event.schedule == '0 * * * *' && 'manager')
   || (github.event.schedule == '30 3 * * *' && 'daily-check')
   || 'cycle' }}
 
-# Every 6h: build the latest commit, fuzz it (~5h) using coverage-guided
-# test selection, then triage whatever bugs that run found (~1h) -- one
-# sequential run per tick rather than separate manager/build/fuzz
-# schedules, to stay well under the org's Actions concurrency limits.
-# `needs:` chains the three jobs so they run in order within a single
-# workflow run instead of overlapping, and `concurrency:` below queues a
-# tick rather than starting a second cycle if the previous one is still
-# running long. daily-check keeps its own schedule (offset from the cycle
-# hours) since it's what keeps the coverage map fuzz relies on fresh --
-# it calls coverage-mapper.yml itself when a rebuild is actually needed,
-# so no separate monthly coverage cron is required either.
+# manager polls the real upstream repo (repo_url below) hourly for new
+# C++-affecting commits and queues them; every 6h, build picks the next
+# queued commit, fuzzes it (~5h) using coverage-guided test selection, then
+# triages whatever bugs that run found (~1h) -- one sequential run per tick
+# for build/fuzz/triage, `needs:` chaining them in order within a single
+# workflow run instead of overlapping. `concurrency:` below queues a tick
+# (manager's hourly or the build/fuzz/triage cycle's 6-hourly one) rather
+# than starting a second run if the previous one is still going, which is
+# also what keeps this safely under the org's Actions concurrency limits:
+# manager is a single lightweight job (no matrix fan-out) and can never run
+# at the same time as this repo's own fuzz matrix, so per solver the ceiling
+# stays whatever fuzz's max_jobs already was -- reinstating manager adds no
+# extra concurrent headroom requirement.
 #
-# There's no separate commit-polling step (manager.yml) any more --
-# build.yml's force_run:true already resolves+builds the current upstream
-# HEAD directly when its queue is empty, which it always is without
-# manager.yml feeding it.
+# This fork is used purely to host .cast/ (this file plus manifest.json/
+# build.sh) -- it is never itself built, fuzzed, or coverage-mapped, and
+# nothing keeps it merged with upstream any more. build/fuzz/coverage/
+# daily-check below all set repo_url to real upstream (where the actual
+# solver source these jobs build/fuzz/coverage-map comes from) and layer
+# .cast/ on top from this fork automatically -- github.repository already
+# resolves to this fork inside a workflow_call'd job, so nothing needs to
+# be passed explicitly for that part. manager only needs repo_url; it
+# never touches .cast/.
+#
+# daily-check keeps its own schedule (offset from the cycle hours) since
+# it's what keeps the coverage map fuzz relies on fresh -- it calls
+# coverage-mapper.yml itself when a rebuild is actually needed, so no
+# separate monthly coverage cron is required either.
 
 on:
   workflow_dispatch:
@@ -30,17 +43,19 @@ on:
         type: choice
         options:
           - cycle
+          - manager
           - build
           - fuzz
           - triage
           - daily-check
       commit_hash:
-        description: 'Optional: commit hash (build/cycle only; ignored on a scheduled run)'
+        description: 'Optional: commit hash (manager/build/cycle only; ignored on a scheduled run)'
         required: false
         type: string
   schedule:
-    - cron: '0 0,6,12,18 * * *'  # cycle: build -> fuzz (~5h) -> triage (~1h)
-    - cron: '30 3 * * *'         # daily-check: rebuild the coverage map if needed
+    - cron: '0 * * * *'           # manager: check upstream for new commits
+    - cron: '0 0,6,12,18 * * *'   # cycle: build -> fuzz (~5h) -> triage (~1h)
+    - cron: '30 3 * * *'          # daily-check: rebuild the coverage map if needed
 
 permissions:
   actions: read
@@ -53,17 +68,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  manager:
+    name: CAST Manager
+    if: inputs.action == 'manager' || inputs.action == 'cycle' || github.event.schedule == '0 * * * *'
+    uses: manchester-fme/CAST/.github/workflows/manager.yml@main
+    with:
+      solver: cvc5
+      repo_url: https://github.com/cvc5/cvc5
+      commit_hash: ${{ inputs.commit_hash }}
+    secrets: inherit
+
   build:
     name: CAST Build
-    if: inputs.action == 'cycle' || inputs.action == 'build' || github.event.schedule == '0 0,6,12,18 * * *'
+    needs: manager
+    if: |
+      always() &&
+      (
+        inputs.action == 'build' ||
+        github.event.schedule == '0 0,6,12,18 * * *' ||
+        (inputs.action == 'cycle' && needs.manager.result == 'success')
+      )
     uses: manchester-fme/CAST/.github/workflows/build.yml@main
     with:
       solver: cvc5
-      repo_url: ${{ github.server_url }}/${{ github.repository }}
+      repo_url: https://github.com/cvc5/cvc5
       build_script: cvc5/.cast/build.sh
       binary_path: build/bin/cvc5
       commit_hash: ${{ inputs.commit_hash }}
-      force_run: true
+      # force_run left at its default (false): build only builds what
+      # manager queued, so a commit only ever gets built/fuzzed once
+      # manager has confirmed it actually touches C++.
     secrets: inherit
 
   fuzz:
@@ -73,7 +107,7 @@ jobs:
     uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@main
     with:
       solver: cvc5
-      repo_url: ${{ github.server_url }}/${{ github.repository }}
+      repo_url: https://github.com/cvc5/cvc5
       solver_dir: cvc5/.cast
       stop_buffer_minutes: 60  # GitHub's default 360-min job timeout minus this = ~5h fuzz budget
     secrets: inherit
@@ -85,6 +119,8 @@ jobs:
     uses: manchester-fme/CAST/.github/workflows/triage.yml@main
     with:
       solver: cvc5
+      repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork -- triage only ever reads manifest.json, never builds source
+      solver_dir: cvc5/.cast
       target_cmd: "cvc5 -q --check-models --check-proofs"
       oracle_cmd: "z3 model_validate=true"
       # archive/commit_hash left empty: auto-discovers this cycle's build/bugs
@@ -97,6 +133,6 @@ jobs:
     uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@main
     with:
       solver: cvc5
-      repo_url: ${{ github.server_url }}/${{ github.repository }}
+      repo_url: https://github.com/cvc5/cvc5
       solver_dir: cvc5/.cast
     secrets: inherit
