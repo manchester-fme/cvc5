@@ -26,7 +26,7 @@ jobs:
     uses: manchester-fme/CAST/.github/workflows/regression-test.yml@main
     with:
       solver: cvc5
-      repo_url: https://github.com/cvc5/cvc5
+      repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork -- .cast/manifest.json only ever lives here, never in real upstream
       solver_dir: cvc5/.cast
       archive: manchester-fme/cvc5/solvers/cvc5/bugs/bugs-be30d27-1786498865.tar.gz
       commit_hash: be30d2772aebdcc5dd83f8fa28c7af612bdf5d2f
