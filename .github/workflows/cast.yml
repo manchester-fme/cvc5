@@ -52,6 +52,10 @@ on:
         description: 'Optional: commit hash (manager/build/triage/cycle only; ignored on a scheduled run)'
         required: false
         type: string
+      archive:
+        description: 'Optional: S3/R2 key of a specific historical bug archive to triage instead of auto-discovering the latest one (triage action only; ignored otherwise). See the Resolve archive/commit_hash step log for available keys.'
+        required: false
+        type: string
   schedule:
     - cron: '0 * * * *'           # manager: check upstream for new commits
     - cron: '0 0,6,12,18 * * *'   # cycle: build -> fuzz (~5h) -> triage (~1h)
@@ -135,12 +139,14 @@ jobs:
       solver_dir: cvc5/.cast
       target_cmd: "cvc5 --check-models --check-proofs --strings-exp"  # must exactly match KNOWN_SOLVER_EXTRA_ARGS['cvc5'] in src/commit_fuzzer/simple_commit_fuzzer.py -- that's the invocation fuzzing actually used to find these bugs
       oracle_cmd: "z3 smt.threads=1 memory_max_size=2048 model_validate=true"  # must exactly match KNOWN_SOLVER_EXTRA_ARGS['z3']
-      # archive left empty: always auto-discovers the latest uploaded bug
-      # archive. commit_hash forwards the top-level input (empty on a
-      # schedule tick or a plain action=triage) so a standalone triage run
-      # can pin the production build to fetch when the latest one no longer
-      # matches the auto-discovered archive's commit (e.g. a newer commit
-      # was built/fuzzed with no bugs since).
+      # archive/commit_hash forward the top-level inputs (both empty on a
+      # schedule tick or a plain action=triage, which auto-discovers the
+      # latest of each). commit_hash lets a standalone triage run pin the
+      # production build to fetch when the latest one no longer matches the
+      # auto-discovered archive's commit (e.g. a newer commit was
+      # built/fuzzed with no bugs since); archive lets it target a specific
+      # historical bug archive instead of always the latest one.
+      archive: ${{ inputs.archive }}
       commit_hash: ${{ inputs.commit_hash }}
       post: true
     secrets: inherit
