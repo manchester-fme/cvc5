@@ -1,0 +1,33 @@
+name: CAST Regression Test
+
+# Manual-only gate: proves CAST's triage pipeline still confirms a known,
+# already-filed real cvc5 bug (github.com/manchester-fme/cvc5/issues/2 -
+# an internal "ERRORS SATISFYING ASSERTIONS WITH MODEL" failure inside
+# cvc5's own --check-models pass, on a deeply-nested regex/string-theory
+# query) before trusting a new CAST release. Pinned to the exact
+# commit/archive that originally produced that issue - not "whatever the
+# latest bug archive happens to be" - so this is deterministic and
+# reproducible on demand.
+#
+# workflow_dispatch only, deliberately no `schedule:` trigger - this must
+# never run automatically, only when a human explicitly asks for it via
+# Actions -> CAST Regression Test -> Run workflow.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  known-bug-still-confirms:
+    name: cvc5 be30d27 still confirms "ASSERTION"
+    uses: manchester-fme/CAST/.github/workflows/regression-test.yml@main
+    with:
+      solver: cvc5
+      repo_url: https://github.com/cvc5/cvc5
+      solver_dir: cvc5/.cast
+      archive: manchester-fme/cvc5/solvers/cvc5/bugs/bugs-be30d27-1786498865.tar.gz
+      commit_hash: be30d2772aebdcc5dd83f8fa28c7af612bdf5d2f
+      target_cmd: "cvc5 --check-models --check-proofs --strings-exp"
+      oracle_cmd: "z3 smt.threads=1 memory_max_size=2048 model_validate=true"
+      expected_kind: crash
+      expected_msg: "ASSERTION"
+    secrets: inherit
