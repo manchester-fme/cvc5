@@ -49,7 +49,7 @@ on:
           - triage
           - daily-check
       commit_hash:
-        description: 'Optional: commit hash (manager/build/cycle only; ignored on a scheduled run)'
+        description: 'Optional: commit hash (manager/build/triage/cycle only; ignored on a scheduled run)'
         required: false
         type: string
   schedule:
@@ -135,7 +135,13 @@ jobs:
       solver_dir: cvc5/.cast
       target_cmd: "cvc5 -q --check-models --check-proofs"
       oracle_cmd: "z3 model_validate=true"
-      # archive/commit_hash left empty: auto-discovers this cycle's build/bugs
+      # archive left empty: always auto-discovers the latest uploaded bug
+      # archive. commit_hash forwards the top-level input (empty on a
+      # schedule tick or a plain action=triage) so a standalone triage run
+      # can pin the production build to fetch when the latest one no longer
+      # matches the auto-discovered archive's commit (e.g. a newer commit
+      # was built/fuzzed with no bugs since).
+      commit_hash: ${{ inputs.commit_hash }}
       post: true
     secrets: inherit
 
