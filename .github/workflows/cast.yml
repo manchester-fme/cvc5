@@ -137,7 +137,7 @@ jobs:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork -- triage only ever reads manifest.json, never builds source
       solver_dir: cvc5/.cast
-      target_cmd: "cvc5 --check-models --check-proofs --strings-exp"  # must exactly match KNOWN_SOLVER_EXTRA_ARGS['cvc5'] in src/commit_fuzzer/simple_commit_fuzzer.py -- that's the invocation fuzzing actually used to find these bugs
+      target_cmd: "cvc5 --check-models --check-proofs --strings-exp -q"  # must exactly match KNOWN_SOLVER_EXTRA_ARGS['cvc5'] in src/commit_fuzzer/simple_commit_fuzzer.py -- that's the invocation fuzzing actually used to find these bugs
       oracle_cmd: "z3 smt.threads=1 memory_max_size=2048 model_validate=true"  # must exactly match KNOWN_SOLVER_EXTRA_ARGS['z3']
       # archive/commit_hash forward the top-level inputs (both empty on a
       # schedule tick or a plain action=triage, which auto-discovers the
