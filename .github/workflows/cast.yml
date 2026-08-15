@@ -103,7 +103,13 @@ jobs:
   fuzz:
     name: CAST Fuzz
     needs: build
-    if: inputs.action == 'cycle' || inputs.action == 'fuzz' || github.event.schedule == '0 0,6,12,18 * * *'
+    if: |
+      always() &&
+      (
+        inputs.action == 'fuzz' ||
+        github.event.schedule == '0 0,6,12,18 * * *' ||
+        (inputs.action == 'cycle' && needs.build.result == 'success')
+      )
     uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@main
     with:
       solver: cvc5
@@ -115,7 +121,13 @@ jobs:
   triage:
     name: CAST Triage
     needs: fuzz
-    if: inputs.action == 'cycle' || inputs.action == 'triage' || github.event.schedule == '0 0,6,12,18 * * *'
+    if: |
+      always() &&
+      (
+        inputs.action == 'triage' ||
+        github.event.schedule == '0 0,6,12,18 * * *' ||
+        (inputs.action == 'cycle' && needs.fuzz.result == 'success')
+      )
     uses: manchester-fme/CAST/.github/workflows/triage.yml@main
     with:
       solver: cvc5
