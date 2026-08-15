@@ -16,6 +16,10 @@ name: CAST Regression Test
 on:
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   known-bug-still-confirms:
     name: cvc5 be30d27 still confirms "ASSERTION"
