@@ -75,7 +75,7 @@ jobs:
   manager:
     name: CAST Manager
     if: inputs.action == 'manager' || inputs.action == 'cycle' || github.event.schedule == '0 * * * *'
-    uses: manchester-fme/CAST/.github/workflows/manager.yml@v0.1.0
+    uses: manchester-fme/CAST/.github/workflows/manager.yml@v0.1.1
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -92,7 +92,7 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.manager.result == 'success')
       )
-    uses: manchester-fme/CAST/.github/workflows/build.yml@v0.1.0
+    uses: manchester-fme/CAST/.github/workflows/build.yml@v0.1.1
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -114,7 +114,7 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.build.result == 'success')
       )
-    uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@v0.1.0
+    uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@v0.1.1
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -132,7 +132,7 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.fuzz.result == 'success')
       )
-    uses: manchester-fme/CAST/.github/workflows/triage.yml@v0.1.0
+    uses: manchester-fme/CAST/.github/workflows/triage.yml@v0.1.1
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork -- triage only ever reads manifest.json, never builds source
@@ -154,7 +154,7 @@ jobs:
   daily-check:
     name: CAST Daily Check
     if: inputs.action == 'daily-check' || github.event.schedule == '30 3 * * *'
-    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@v0.1.0
+    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@v0.1.1
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
