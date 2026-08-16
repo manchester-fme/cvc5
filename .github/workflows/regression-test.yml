@@ -19,6 +19,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  issues: write
 
 jobs:
   known-bug-still-confirms:
