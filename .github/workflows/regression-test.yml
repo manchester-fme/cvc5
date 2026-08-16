@@ -23,7 +23,7 @@ permissions:
 jobs:
   known-bug-still-confirms:
     name: cvc5 be30d27 still confirms "ASSERTION"
-    uses: manchester-fme/CAST/.github/workflows/regression-test.yml@main
+    uses: manchester-fme/CAST/.github/workflows/pre-release.yml@main
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork -- .cast/manifest.json only ever lives here, never in real upstream
