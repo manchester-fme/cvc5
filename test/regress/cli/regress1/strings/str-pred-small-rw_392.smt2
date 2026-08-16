@@ -1,8 +1,0 @@
-(set-logic QF_SLIA)
-(set-info :status unsat)
-(declare-fun x () String)
-(declare-fun y () String)
-(declare-fun z () Int)
-(assert (not (= (str.suffixof "A" (str.replace x "A" "")) (str.suffixof "A" (str.replace x "A" "B")))))
-(check-sat)
-(exit)

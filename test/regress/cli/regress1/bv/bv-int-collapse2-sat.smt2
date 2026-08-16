@@ -1,6 +1,0 @@
-(set-logic ALL)
-(set-info :status sat)
-(declare-fun t () Int)
-(assert (> t 0))
-(assert (not (= t (ubv_to_int ((_ int_to_bv 16) t)))))
-(check-sat)

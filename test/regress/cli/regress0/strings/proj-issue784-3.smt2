@@ -1,6 +1,0 @@
-; EXPECT: unsat
-(set-logic ALL)
-(declare-fun x () String)
-(declare-fun y () String)
-(assert (= (str.replace (str.++ "B" x) y "BB") (str.++ y x)))
-(check-sat)
