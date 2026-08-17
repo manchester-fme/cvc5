@@ -1,4 +1,5 @@
 {
+  "solver": "cvc5",
   "coverage": {
     "repo_url": "https://github.com/cvc5/cvc5.git",
     "extra_repos": [],
