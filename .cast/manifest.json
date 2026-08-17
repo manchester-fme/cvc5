@@ -35,10 +35,14 @@
       "max_process_memory_mb_warning": 1536
     },
     "skip_sut_clone_if_binary_cached": false,
-    "git_cleanup_dirs": ["cvc5", "yinyang"],
+    "git_cleanup_dirs": [
+      "cvc5",
+      "yinyang"
+    ],
     "namespace_prefix": "cvc5::",
     "clang_args": [
-      "-x", "c++",
+      "-x",
+      "c++",
       "-std=c++17",
       "-gz=none",
       "-I./include",
@@ -46,7 +50,8 @@
       "-I./src/include",
       "-I./src/.",
       "-I./build/src",
-      "-isystem", "./build/deps/include",
+      "-isystem",
+      "./build/deps/include",
       "-DCVC5_ASSERTIONS",
       "-DCVC5_DEBUG",
       "-DCVC5_STATISTICS_ON",
@@ -69,6 +74,7 @@
       "-Wno-unused-parameter",
       "-Wno-unused-variable",
       "-Wno-unused-function"
-    ]
+    ],
+    "solver_cli": "--check-models --check-proofs --strings-exp -q"
   }
 }
