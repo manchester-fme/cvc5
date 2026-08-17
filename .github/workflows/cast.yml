@@ -75,7 +75,7 @@ jobs:
   manager:
     name: CAST Manager
     if: inputs.action == 'manager' || inputs.action == 'cycle' || github.event.schedule == '0 * * * *'
-    uses: manchester-fme/CAST/.github/workflows/manager.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/manager.yml@v0.4.0
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -92,7 +92,7 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.manager.result == 'success')
       )
-    uses: manchester-fme/CAST/.github/workflows/build.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/build.yml@v0.4.0
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -114,7 +114,7 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.build.result == 'success')
       )
-    uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@v0.4.0
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -132,13 +132,11 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.fuzz.result == 'success')
       )
-    uses: manchester-fme/CAST/.github/workflows/triage.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/triage.yml@v0.4.0
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork -- triage only ever reads manifest.json, never builds source
       solver_dir: cvc5/.cast
-      target_cmd: "cvc5 --check-models --check-proofs --strings-exp -q"  # must exactly match KNOWN_SOLVER_EXTRA_ARGS['cvc5'] in src/commit_fuzzer/simple_commit_fuzzer.py -- that's the invocation fuzzing actually used to find these bugs
-      oracle_cmd: "z3 smt.threads=1 memory_max_size=2048 model_validate=true"  # must exactly match KNOWN_SOLVER_EXTRA_ARGS['z3']
       # archive/commit_hash forward the top-level inputs (both empty on a
       # schedule tick or a plain action=triage, which auto-discovers the
       # latest of each). commit_hash lets a standalone triage run pin the
@@ -154,7 +152,7 @@ jobs:
   daily-check:
     name: CAST Daily Check
     if: inputs.action == 'daily-check' || github.event.schedule == '30 3 * * *'
-    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@v0.4.0
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
