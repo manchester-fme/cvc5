@@ -6,34 +6,12 @@ run-name: >-
   || (github.event.schedule == '30 3 * * *' && 'daily-check')
   || 'cycle' }}
 
-# manager polls the real upstream repo (repo_url below) hourly for new
-# C++-affecting commits and queues them; every 6h, build picks the next
-# queued commit, fuzzes it (~5h) using coverage-guided test selection, then
-# triages whatever bugs that run found (~1h) -- one sequential run per tick
-# for build/fuzz/triage, `needs:` chaining them in order within a single
-# workflow run instead of overlapping. `concurrency:` below queues a tick
-# (manager's hourly or the build/fuzz/triage cycle's 6-hourly one) rather
-# than starting a second run if the previous one is still going, which is
-# also what keeps this safely under the org's Actions concurrency limits:
-# manager is a single lightweight job (no matrix fan-out) and can never run
-# at the same time as this repo's own fuzz matrix, so per solver the ceiling
-# stays whatever fuzz's max_jobs already was -- reinstating manager adds no
-# extra concurrent headroom requirement.
+# Hourly: manager queues new upstream commits. Every 6h: build -> fuzz
+# (~5h) -> triage (~1h). Daily: rebuild the coverage map. See
+# manchester-fme/CAST's README.md for the full setup contract.
 #
-# This fork is used purely to host .cast/ (this file plus manifest.json/
-# build.sh) -- it is never itself built, fuzzed, or coverage-mapped, and
-# nothing keeps it merged with upstream any more. build/fuzz/coverage/
-# daily-check below all set repo_url to real upstream (where the actual
-# solver source these jobs build/fuzz/coverage-map comes from) and layer
-# .cast/ on top from this fork automatically -- github.repository already
-# resolves to this fork inside a workflow_call'd job, so nothing needs to
-# be passed explicitly for that part. manager only needs repo_url; it
-# never touches .cast/.
-#
-# daily-check keeps its own schedule (offset from the cycle hours) since
-# it's what keeps the coverage map fuzz relies on fresh -- it calls
-# coverage-mapper.yml itself when a rebuild is actually needed, so no
-# separate monthly coverage cron is required either.
+# You do not need to edit anything in this file - it's already filled in
+# for this fork. Leave the schedule, jobs, and conditions as they are.
 
 on:
   workflow_dispatch:
@@ -99,9 +77,6 @@ jobs:
       build_script: cvc5/.cast/build.sh
       binary_path: build/bin/cvc5
       commit_hash: ${{ inputs.commit_hash }}
-      # force_run left at its default (false): build only builds what
-      # manager queued, so a commit only ever gets built/fuzzed once
-      # manager has confirmed it actually touches C++.
     secrets: inherit
 
   fuzz:
@@ -119,7 +94,7 @@ jobs:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
       solver_dir: cvc5/.cast
-      stop_buffer_minutes: 60  # GitHub's default 360-min job timeout minus this = ~5h fuzz budget
+      stop_buffer_minutes: 60
     secrets: inherit
 
   triage:
@@ -135,15 +110,8 @@ jobs:
     uses: manchester-fme/CAST/.github/workflows/triage.yml@v0.4.0
     with:
       solver: cvc5
-      repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork -- triage only ever reads manifest.json, never builds source
+      repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork, not upstream
       solver_dir: cvc5/.cast
-      # archive/commit_hash forward the top-level inputs (both empty on a
-      # schedule tick or a plain action=triage, which auto-discovers the
-      # latest of each). commit_hash lets a standalone triage run pin the
-      # production build to fetch when the latest one no longer matches the
-      # auto-discovered archive's commit (e.g. a newer commit was
-      # built/fuzzed with no bugs since); archive lets it target a specific
-      # historical bug archive instead of always the latest one.
       archive: ${{ inputs.archive }}
       commit_hash: ${{ inputs.commit_hash }}
       post: true
