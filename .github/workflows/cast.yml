@@ -11,14 +11,19 @@ run-name: >-
 # queued commit, fuzzes it (~5h) using coverage-guided test selection, then
 # triages whatever bugs that run found (~1h) -- one sequential run per tick
 # for build/fuzz/triage, `needs:` chaining them in order within a single
-# workflow run instead of overlapping. `concurrency:` below queues a tick
-# (manager's hourly or the build/fuzz/triage cycle's 6-hourly one) rather
-# than starting a second run if the previous one is still going, which is
-# also what keeps this safely under the org's Actions concurrency limits:
-# manager is a single lightweight job (no matrix fan-out) and can never run
-# at the same time as this repo's own fuzz matrix, so per solver the ceiling
-# stays whatever fuzz's max_jobs already was -- reinstating manager adds no
-# extra concurrent headroom requirement.
+# workflow run instead of overlapping. Each job below carries its own
+# `concurrency:` group rather than one workflow-level group, specifically so
+# manager's hourly tick is never stuck behind (and, per GitHub's "only the
+# newest pending run survives" rule, cancelled by) the 6h build/fuzz/triage
+# cycle -- a single shared group meant hours of hourly ticks got silently
+# dropped every cycle. build/fuzz/triage still share one group (via
+# `needs:` chaining plus the same concurrency group) so they stay
+# sequential both within a run and across overlapping runs; daily-check
+# gets its own group for the same reason as manager. manager and
+# daily-check are both single lightweight jobs (no matrix fan-out), so
+# letting them run alongside this repo's own fuzz matrix adds at most one
+# extra concurrent runner each per solver -- negligible next to fuzz's own
+# max_jobs headroom.
 #
 # This fork is used purely to host .cast/ (this file plus manifest.json/
 # build.sh) -- it is never itself built, fuzzed, or coverage-mapped, and
@@ -67,14 +72,14 @@ permissions:
   issues: write
   id-token: write
 
-concurrency:
-  group: cast-cycle-${{ github.repository }}
-  cancel-in-progress: false
 
 jobs:
   manager:
     name: CAST Manager
     if: inputs.action == 'manager' || inputs.action == 'cycle' || github.event.schedule == '0 * * * *'
+    concurrency:
+      group: cast-manager-${{ github.repository }}
+      cancel-in-progress: false
     uses: manchester-fme/CAST/.github/workflows/manager.yml@v0.3.0
     with:
       solver: cvc5
@@ -92,6 +97,9 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.manager.result == 'success')
       )
+    concurrency:
+      group: cast-cycle-${{ github.repository }}
+      cancel-in-progress: false
     uses: manchester-fme/CAST/.github/workflows/build.yml@v0.3.0
     with:
       solver: cvc5
@@ -114,6 +122,9 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.build.result == 'success')
       )
+    concurrency:
+      group: cast-cycle-${{ github.repository }}
+      cancel-in-progress: false
     uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@v0.3.0
     with:
       solver: cvc5
@@ -132,6 +143,9 @@ jobs:
         github.event.schedule == '0 0,6,12,18 * * *' ||
         (inputs.action == 'cycle' && needs.fuzz.result == 'success')
       )
+    concurrency:
+      group: cast-cycle-${{ github.repository }}
+      cancel-in-progress: false
     uses: manchester-fme/CAST/.github/workflows/triage.yml@v0.3.0
     with:
       solver: cvc5
@@ -154,6 +168,9 @@ jobs:
   daily-check:
     name: CAST Daily Check
     if: inputs.action == 'daily-check' || github.event.schedule == '30 3 * * *'
+    concurrency:
+      group: cast-daily-check-${{ github.repository }}
+      cancel-in-progress: false
     uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@v0.3.0
     with:
       solver: cvc5
