@@ -80,7 +80,7 @@ jobs:
     concurrency:
       group: cast-manager-${{ github.repository }}
       cancel-in-progress: false
-    uses: manchester-fme/CAST/.github/workflows/manager.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/manager.yml@v0.3.2
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -100,7 +100,7 @@ jobs:
     concurrency:
       group: cast-cycle-${{ github.repository }}
       cancel-in-progress: false
-    uses: manchester-fme/CAST/.github/workflows/build.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/build.yml@v0.3.2
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -125,7 +125,7 @@ jobs:
     concurrency:
       group: cast-cycle-${{ github.repository }}
       cancel-in-progress: false
-    uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/commit-fuzzer.yml@v0.3.2
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
@@ -146,7 +146,7 @@ jobs:
     concurrency:
       group: cast-cycle-${{ github.repository }}
       cancel-in-progress: false
-    uses: manchester-fme/CAST/.github/workflows/triage.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/triage.yml@v0.3.2
     with:
       solver: cvc5
       repo_url: ${{ github.server_url }}/${{ github.repository }}  # this fork -- triage only ever reads manifest.json, never builds source
@@ -171,7 +171,7 @@ jobs:
     concurrency:
       group: cast-daily-check-${{ github.repository }}
       cancel-in-progress: false
-    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@v0.3.0
+    uses: manchester-fme/CAST/.github/workflows/coverage-daily-check.yml@v0.3.2
     with:
       solver: cvc5
       repo_url: https://github.com/cvc5/cvc5
