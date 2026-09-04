@@ -79,14 +79,14 @@ if [[ "$ENABLE_STATIC" == "true" ]] && [[ "$ENABLE_COVERAGE" == "true" ]]; then
     echo "📦 Configuring CVC5 for static binary with coverage..."
     ./configure.sh debug --coverage --assertions --static --static-binary --auto-download
 elif [[ "$ENABLE_STATIC" == "true" ]]; then
-    echo "📦 Configuring CVC5 for static binary (production)..."
-    ./configure.sh production --static --static-binary --auto-download
+    echo "📦 Configuring CVC5 for static binary (unrestricted)..."
+    ./configure.sh unrestricted --static --static-binary --auto-download
 elif [[ "$ENABLE_COVERAGE" == "true" ]]; then
     echo "🔍 Configuring CVC5 with coverage instrumentation..."
     ./configure.sh debug --coverage --assertions --auto-download
 else
     echo "⚡ Configuring CVC5 for production (no coverage)..."
-    ./configure.sh production --auto-download
+    ./configure.sh unrestricted --auto-download
 fi
 
 cd build
